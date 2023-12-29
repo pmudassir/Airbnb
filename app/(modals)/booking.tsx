@@ -20,17 +20,47 @@ import { Ionicons } from "@expo/vector-icons";
 import Colors from "@/constants/Colors";
 import { places } from "@/assets/data/places";
 
+// @ts-ignore
+import DatePicker from "react-native-modern-datepicker";
+
 const AnimatedTouchableOpacity =
   Animated.createAnimatedComponent(TouchableOpacity);
+
+const guestGroups = [
+  {
+    name: "Adults",
+    text: "Ages 13 or above",
+    count: 0,
+  },
+  {
+    name: "Children",
+    text: "Ages 2-12",
+    count: 0,
+  },
+  {
+    name: "Infants",
+    text: "Under 2",
+    count: 0,
+  },
+  {
+    name: "Pets",
+    text: "Pets allowed",
+    count: 0,
+  },
+];
 
 const Booking = () => {
   const router = useRouter();
   const [openCard, setOpenCard] = useState(0);
   const [selectedPlace, setSelectedPlace] = useState(0);
+  const [groups, setGroups] = useState(guestGroups);
+
+  const today = new Date().toISOString().substring(0, 10);
 
   const onClearAll = () => {
     setOpenCard(0);
     setSelectedPlace(0);
+    setGroups(guestGroups);
   };
 
   return (
@@ -66,26 +96,39 @@ const Booking = () => {
                   placeholderTextColor={Colors.grey}
                 />
               </View>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {places.map((item, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    onPress={() => setSelectedPlace(index)}>
-                    <Image
-                      source={item.img}
-                      style={
-                        selectedPlace === index
-                          ? styles.placeSelected
-                          : styles.place
-                      }
-                    />
-                    <Text style={{ fontFamily: "mon-sb", paddingTop: 6 }}>
-                      {item.title}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
             </Animated.View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{
+                gap: 25,
+                paddingLeft: 20,
+                marginBottom: 20,
+              }}>
+              {places.map((item, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => setSelectedPlace(index)}>
+                  <Image
+                    source={item.img}
+                    style={
+                      selectedPlace === index
+                        ? styles.placeSelected
+                        : styles.place
+                    }
+                  />
+                  <Text
+                    style={[
+                      { paddingTop: 6 },
+                      selectedPlace === index
+                        ? { fontFamily: "mon-sb" }
+                        : { fontFamily: "mon" },
+                    ]}>
+                    {item.title}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           </>
         )}
       </View>
@@ -104,11 +147,24 @@ const Booking = () => {
         )}
 
         {openCard == 1 && (
-          <Animated.View>
+          <>
             <Animated.Text entering={FadeIn} style={styles.cardHeader}>
               When's your trip?
             </Animated.Text>
-          </Animated.View>
+            <Animated.View style={styles.cardBody}>
+              <DatePicker
+                current={today}
+                selected={today}
+                mode={"Calender"}
+                options={{
+                  defaultFont: "mon",
+                  borderColor: "transparent",
+                  mainColor: Colors.primary,
+                  headerFont: "mon-sb",
+                }}
+              />
+            </Animated.View>
+          </>
         )}
       </View>
 
@@ -126,11 +182,76 @@ const Booking = () => {
         )}
 
         {openCard == 2 && (
-          <Animated.View>
+          <>
             <Animated.Text entering={FadeIn} style={styles.cardHeader}>
               Who's coming?
             </Animated.Text>
-          </Animated.View>
+            <Animated.View style={styles.cardBody}>
+              {groups.map((item, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.guestItem,
+                    index + 1 < groups.length ? styles.itemBorder : null,
+                  ]}>
+                  <View>
+                    <Text style={{ fontFamily: "mon-sb", fontSize: 14 }}>
+                      {item.name}
+                    </Text>
+                    <Text
+                      style={{
+                        fontFamily: "mon",
+                        fontSize: 14,
+                        color: Colors.grey,
+                      }}>
+                      {item.text}
+                    </Text>
+                  </View>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      gap: 10,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        const newGroup = [...groups];
+                        newGroup[index].count =
+                          newGroup[index].count > 0
+                            ? newGroup[index].count - 1
+                            : 0;
+                        setGroups(newGroup);
+                      }}>
+                      <Ionicons
+                        name="remove-circle-outline"
+                        size={26}
+                        color={
+                          groups[index].count > 0 ? Colors.grey : "#cdcdcd"
+                        }
+                      />
+                    </TouchableOpacity>
+                    <Text
+                      style={{ fontFamily: "mon", fontSize: 16, minWidth: 18 }}>
+                      {item.count}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => {
+                        const newGroup = [...groups];
+                        newGroup[index].count++;
+                        setGroups(newGroup);
+                      }}>
+                      <Ionicons
+                        name="add-circle-outline"
+                        size={26}
+                        color={Colors.grey}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))}
+            </Animated.View>
+          </>
         )}
       </View>
 
@@ -215,7 +336,6 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   cardBody: {
-    paddingBottom: 20,
     paddingHorizontal: 20,
   },
   searchSection: {
@@ -227,7 +347,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     alignContent: "center",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 4,
   },
   inputField: {
     flex: 1,
@@ -238,13 +358,25 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   placeSelected: {
-    width: 100,
-    height: 100,
+    width: 120,
+    height: 120,
     borderRadius: 10,
+    borderWidth: 2,
+    borderColor: Colors.grey,
   },
   place: {
-    width: 100,
-    height: 100,
+    width: 120,
+    height: 120,
     borderRadius: 10,
+  },
+  guestItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 16,
+  },
+  itemBorder: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.grey,
   },
 });
